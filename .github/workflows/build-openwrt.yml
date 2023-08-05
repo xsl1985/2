@@ -60,7 +60,25 @@ jobs:
         df -hT $PWD
         git clone $REPO_URL -b $REPO_BRANCH openwrt
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-
+    - name: add 703n-dts
+      run: |
+        cd openwrt/target/linux/ath79/dts
+        sed -i 's/0x3d0000/0xfd0000/' ar9331_tplink_tl-wr703n_tl-mr10u.dtsi
+        sed -i 's/0x3f0000/0xff0000/' ar9331_tplink_tl-wr703n_tl-mr10u.dtsi
+        cd ../image
+        cat >> generic-tp-link.mk <<EOF
+        define Device/tplink_tl-wr703n
+        aaaaa\$(Device/tplink-4mlzma)
+        aaaaaSOC := ar9331
+        aaaaaDEVICE_MODEL := TL-WR703N
+        aaaaaDEVICE_PACKAGES := kmod-usb-chipidea2
+        aaaaaTPLINK_HWID := 0x07030101
+        aaaaaSUPPORTED_DEVICES += tl-wr703n
+        endef
+        TARGET_DEVICES += tplink_tl-wr703n
+        EOF
+        sed -i 's/aaaaa/  /g' generic-tp-link.mk
+        
     - name: Load custom feeds
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
@@ -188,3 +206,4 @@ jobs:
         delete_tags: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
